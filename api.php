@@ -1,0 +1,107 @@
+<?php
+$host = 'localhost';
+$db = 'estoque';
+$user = 'root'; // usuário
+$pass = ''; // senha em branco
+
+try {
+    $pdo = new PDO("mysql:host=$host;dbname=$db", $user, $pass);
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+} catch (PDOException $e) {
+    echo json_encode(["error" => $e->getMessage()]);
+    exit();
+}
+$request_method = $_SERVER["REQUEST_METHOD"];
+
+switch ($request_method) {
+    case 'GET':
+        // Verifique se um ID ou nome foi fornecido na URL
+        if (isset($_GET['id'])) {
+            getProdutoById($pdo, $_GET['id']);
+        } elseif (isset($_GET['nome'])) {
+            getProdutoByNome($pdo, $_GET['nome']);
+        } else {
+            getProdutos($pdo);
+        }
+        break;
+    case 'POST':
+        addProduto($pdo);
+        break;
+    case 'PUT':
+        updateQuantidade($pdo);
+        break;
+    case 'DELETE':
+        deleteProduto($pdo);
+        break;
+    default:
+        echo json_encode(["message" => "Método não permitido"]);
+        break;
+}
+
+
+function getProdutos($pdo) {
+    $stmt = $pdo->query("SELECT * FROM produtos");
+    $produtos = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    echo json_encode($produtos);
+}
+
+function addProduto($pdo) {
+    $data = json_decode(file_get_contents("php://input"), true);
+    $stmt = $pdo->prepare("INSERT INTO produtos (nome, quantidade, preco) VALUES (?, ?, ?)");
+    $stmt->execute([$data['nome'], $data['quantidade'], $data['preco']]);
+    echo json_encode(["message" => "Produto adicionado com sucesso!"]);
+}
+
+function updateProduto($pdo) {
+    $data = json_decode(file_get_contents("php://input"), true);
+    $stmt = $pdo->prepare("UPDATE produtos SET nome = ?, quantidade = ?, preco = ? WHERE id = ?");
+    $stmt->execute([$data['nome'], $data['quantidade'], $data['preco'], $data['id']]);
+    echo json_encode(["message" => "Produto atualizado com sucesso!"]);
+}
+
+function deleteProduto($pdo) {
+    $data = json_decode(file_get_contents("php://input"), true);
+    $stmt = $pdo->prepare("DELETE FROM produtos WHERE id = ?");
+    $stmt->execute([$data['id']]);
+    echo json_encode(["message" => "Produto removido com sucesso!"]);
+}
+function getProdutoById($pdo, $id) {
+    $stmt = $pdo->prepare("SELECT * FROM produtos WHERE id = ?");
+    $stmt->execute([$id]);
+    $produto = $stmt->fetch(PDO::FETCH_ASSOC);
+    echo json_encode($produto);
+}
+
+function getProdutosByNome($pdo, $nome) {
+    $stmt = $pdo->prepare("SELECT * FROM produtos WHERE nome LIKE ?");
+    $stmt->execute(['%' . $nome . '%']);
+    $produtos = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    echo json_encode($produtos);
+}
+function updateQuantidade($pdo, $data) {
+    // Verifique se o ID e a quantidade estão presentes no JSON
+    if (isset($data['id']) && isset($data['quantidade'])) {
+        // Prepare a instrução SQL
+        $stmt = $pdo->prepare("UPDATE produtos SET quantidade = ? WHERE id = ?");
+        
+        // Execute a instrução e verifique se a atualização foi bem-sucedida
+        if ($stmt->execute([$data['quantidade'], $data['id']])) {
+            echo json_encode(["message" => "Quantidade atualizada com sucesso!"]);
+        } else {
+            echo json_encode(["error" => "Erro ao atualizar a quantidade."]);
+        }
+    } else {
+        echo json_encode(["error" => "ID e quantidade são necessários."]);
+    }
+}
+
+if ($_SERVER['REQUEST_METHOD'] == 'PUT') {
+    // Obtenha os dados JSON da requisição
+    $data = json_decode(file_get_contents("php://input"), true);
+    
+    // Chame a função para atualizar a quantidade
+    updateQuantidade($pdo, $data);
+}
+
+
+?>
