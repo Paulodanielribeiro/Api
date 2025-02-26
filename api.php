@@ -56,6 +56,9 @@ function updateProduto($pdo) {
     $data = json_decode(file_get_contents("php://input"), true);
     $stmt = $pdo->prepare("UPDATE produtos SET nome = ?, quantidade = ?, preco = ? WHERE id = ?");
     $stmt->execute([$data['nome'], $data['quantidade'], $data['preco'], $data['id']]);
+    error_log("Recebendo requisição para adicionar produto");
+    error_log(json_encode($data));
+
     echo json_encode(["message" => "Produto atualizado com sucesso!"]);
 }
 

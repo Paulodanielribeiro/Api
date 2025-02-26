@@ -1,13 +1,16 @@
 <?php
-$host = 'localhost';
-$db = 'estoque';
-$user = 'root'; // ou seu usuário
-$pass = ''; // ou sua senha
+$host = "127.0.0.1"; // ou "localhost"
+$port = "3307"; // ou "3306", se voltou ao padrão
+$dbname = "seu_banco";
+$username = "root";
+$password = "";
 
 try {
-    $pdo = new PDO("mysql:host=$host;dbname=$db", $user, $pass);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $conn = new PDO("mysql:host=$host;port=$port;dbname=$dbname", $user, $password);
+$conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    echo "Conexão bem-sucedida!";
 } catch (PDOException $e) {
-    echo 'Connection failed: ' . $e->getMessage();
+    echo json_encode(["error" => $e->getMessage()]);
 }
+
 ?>
