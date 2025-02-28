@@ -50,8 +50,12 @@ function addProduto($pdo) {
     $data = json_decode(file_get_contents("php://input"), true);
     $stmt = $pdo->prepare("INSERT INTO produtos (nome, quantidade, preco) VALUES (?, ?, ?)");
     $stmt->execute([$data['nome'], $data['quantidade'], $data['preco']]);
-    echo json_encode(["message" => "Produto adicionado com sucesso!"]);
+    
+    // Retorna o ID do último produto inserido
+    $lastId = $pdo->lastInsertId();
+    echo json_encode(["message" => "Produto adicionado com sucesso!", "id" => $lastId]);
 }
+
 
 function updateProduto($pdo) {
     $data = json_decode(file_get_contents("php://input"), true);

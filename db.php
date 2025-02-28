@@ -1,12 +1,12 @@
 <?php
-$host = "127.0.0.1"; // ou "localhost"
+$host = "localhost"; // ou "localhost"
 $port = "3307"; // ou "3306", se voltou ao padrão
-$dbname = "seu_banco";
+$dbname = "estoque";
 $username = "root";
 $password = "";
 
 try {
-    $pdo = new PDO("mysql:host=localhost;port=3307;dbname=seu_banco", "usuario", "senha");
+    $pdo = new PDO("mysql:host=localhost;port=3307;dbname=estoque", "root", "");
 $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     echo "Conexão bem-sucedida!";
 } catch (PDOException $e) {
