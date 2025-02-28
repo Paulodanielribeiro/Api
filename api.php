@@ -5,7 +5,8 @@ $user = 'root'; // usuário
 $pass = ''; // senha em branco
 
 try {
-    $pdo = new PDO("mysql:host=$host;dbname=$db", $user, $pass);
+    $pdo = new PDO("mysql:host=localhost;port=3307;dbname=seu_banco", "usuario", "senha");
+    
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 } catch (PDOException $e) {
     echo json_encode(["error" => $e->getMessage()]);

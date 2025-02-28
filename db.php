@@ -6,7 +6,7 @@ $username = "root";
 $password = "";
 
 try {
-    $conn = new PDO("mysql:host=$host;port=$port;dbname=$dbname", $user, $password);
+    $pdo = new PDO("mysql:host=localhost;port=3307;dbname=seu_banco", "usuario", "senha");
 $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     echo "Conexão bem-sucedida!";
 } catch (PDOException $e) {
