@@ -1,17 +1,18 @@
 <?php
 $host = 'localhost';
-$db = 'estoque';
-$user = 'root'; // usuário
-$pass = ''; // senha em branco
+$port = '3307'; // Troque para 3307 se necessário
+$db = 'estoque'; // Nome real do banco
+$user = 'root'; // Usuário padrão do MySQL no XAMPP
+$pass = ''; // Senha padrão no XAMPP é vazia
 
 try {
-    $pdo = new PDO("mysql:host=localhost;port=3307;dbname=seu_banco", "usuario", "senha");
-    
+    $pdo = new PDO("mysql:host=$host;port=$port;dbname=$db", $user, $pass);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 } catch (PDOException $e) {
-    echo json_encode(["error" => $e->getMessage()]);
+    echo json_encode(["error" => "Erro na conexão: " . $e->getMessage()]);
     exit();
 }
+
 $request_method = $_SERVER["REQUEST_METHOD"];
 
 switch ($request_method) {
@@ -48,13 +49,22 @@ function getProdutos($pdo) {
 
 function addProduto($pdo) {
     $data = json_decode(file_get_contents("php://input"), true);
-    $stmt = $pdo->prepare("INSERT INTO produtos (nome, quantidade, preco) VALUES (?, ?, ?)");
-    $stmt->execute([$data['nome'], $data['quantidade'], $data['preco']]);
-    
-    // Retorna o ID do último produto inserido
-    $lastId = $pdo->lastInsertId();
-    echo json_encode(["message" => "Produto adicionado com sucesso!", "id" => $lastId]);
+
+    if (!isset($data['nome']) || !isset($data['quantidade']) || !isset($data['preco'])) {
+        echo json_encode(["error" => "Todos os campos são obrigatórios"]);
+        return;
+    }
+
+    try {
+        $stmt = $pdo->prepare("INSERT INTO produtos (nome, quantidade, preco) VALUES (?, ?, ?)");
+        $stmt->execute([$data['nome'], $data['quantidade'], $data['preco']]);
+
+        echo json_encode(["message" => "Produto adicionado com sucesso!", "id" => $pdo->lastInsertId()]);
+    } catch (PDOException $e) {
+        echo json_encode(["error" => "Erro ao adicionar produto: " . $e->getMessage()]);
+    }
 }
+
 
 
 function updateProduto($pdo) {
