@@ -7,7 +7,7 @@ $host = 'localhost';
 $db = 'estoque';
 $user = 'root';
 $pass = '';
-$port = '3307'; // Alterar para 3307 se necessário
+$port = '3306'; // Alterar para 3307 se necessário
 
 try {
     $pdo = new PDO("mysql:host=$host;dbname=$db;charset=utf8", $user, $pass);

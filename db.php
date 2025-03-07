@@ -1,6 +1,6 @@
 <?php
 $host = "localhost"; // ou "localhost"
-$port = "3307"; // ou "3306", se voltou ao padrão
+$port = "3306"; // ou "3306", se voltou ao padrão
 $dbname = "estoque";
 $username = "root";
 $password = "";
