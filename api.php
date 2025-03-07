@@ -1,13 +1,13 @@
 <?php
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: POST, GET, PUT, DELETE, OPTIONS");
-header("Content-Type: application/json");
+header("Access-Control-Allow-Headers: Content-Type");
 
 $host = 'localhost';
 $db = 'estoque';
 $user = 'root';
 $pass = '';
-$port = '3306'; // Alterar para 3307 se necessário
+$port = '3307'; // Alterar para 3307 se necessário
 
 try {
     $pdo = new PDO("mysql:host=$host;dbname=$db;charset=utf8", $user, $pass);
