@@ -1,16 +1,19 @@
 <?php
-$host = "localhost"; // ou "localhost"
-$port = "3306"; // ou "3306", se voltou ao padrão
-$dbname = "estoque";
-$username = "root";
-$password = "";
+$host = "localhost"; // Endereço do servidor MySQL
+$port = "3306"; // Porta do MySQL (se for 3307, altere aqui também)
+$dbname = "estoque"; // Nome do banco de dados
+$username = "root"; // Usuário do MySQL
+$password = ""; // Senha do MySQL
 
 try {
-    $pdo = new PDO("mysql:host=localhost;port=3307;dbname=estoque", "root", "");
-$conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    echo "Conexão bem-sucedida!";
+    // Criação da conexão com o banco de dados
+    $pdo = new PDO("mysql:host=$host;port=$port;dbname=$dbname", $username, $password);
+    // Configuração para exibir erros de conexão
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_SILENT);
+    // Caso a conexão seja bem-sucedida, você pode usar este código para teste
+    // echo "Conexão bem-sucedida!";
 } catch (PDOException $e) {
+    // Exibindo erro caso a conexão falhe
     echo json_encode(["error" => $e->getMessage()]);
 }
-
 ?>

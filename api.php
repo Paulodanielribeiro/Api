@@ -3,19 +3,8 @@ header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: POST, GET, PUT, DELETE, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type");
 
-$host = 'localhost';
-$db = 'estoque';
-$user = 'root';
-$pass = '';
-$port = '3306'; // Alterar para 3307 se necessário
-
-try {
-    $pdo = new PDO("mysql:host=$host;dbname=$db;charset=utf8", $user, $pass);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-} catch (PDOException $e) {
-    echo json_encode(["error" => "Erro na conexão: " . $e->getMessage()]);
-    exit();
-}
+// Incluindo a conexão do banco de dados
+include 'db.php';
 
 $request_method = $_SERVER["REQUEST_METHOD"];
 
@@ -30,7 +19,11 @@ switch ($request_method) {
         }
         break;
     case 'POST':
-        addProduto($pdo);
+        if (isset($_GET['action']) && $_GET['action'] === 'login') {
+            loginUser($pdo);
+        } else {
+            addProduto($pdo);
+        }
         break;
     case 'PUT':
         updateQuantidade($pdo);
@@ -43,6 +36,7 @@ switch ($request_method) {
         break;
 }
 
+// Funções para manipular o banco de dados (adicionar, atualizar, excluir, etc.)
 function getProdutos($pdo) {
     $stmt = $pdo->query("SELECT * FROM produtos");
     $produtos = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -52,14 +46,14 @@ function getProdutos($pdo) {
 function addProduto($pdo) {
     $data = json_decode(file_get_contents("php://input"), true);
 
-    if (!isset($data['name']) || !isset($data['quantity']) || !isset($data['price'])) {
+    if (!isset($data['name']) || !isset($data['quantity']) || !isset($data['price']) || !isset($data['descricao'])) {
         echo json_encode(["error" => "Todos os campos são obrigatórios"]);
         return;
     }
 
     try {
-        $stmt = $pdo->prepare("INSERT INTO produtos (nome, quantidade, preco) VALUES (?, ?, ?)");
-        $stmt->execute([$data['name'], $data['quantity'], $data['price']]);
+        $stmt = $pdo->prepare("INSERT INTO produtos (nome, quantidade, preco, descricao) VALUES (?, ?, ?, ?)");
+        $stmt->execute([$data['name'], $data['quantity'], $data['price'], $data['descricao']]);
         echo json_encode(["message" => "Produto adicionado com sucesso!", "id" => $pdo->lastInsertId()]);
     } catch (PDOException $e) {
         echo json_encode(["error" => "Erro ao adicionar produto: " . $e->getMessage()]);
@@ -104,7 +98,12 @@ function getProdutoById($pdo, $id) {
     $stmt = $pdo->prepare("SELECT * FROM produtos WHERE id = ?");
     $stmt->execute([$id]);
     $produto = $stmt->fetch(PDO::FETCH_ASSOC);
-    echo json_encode($produto);
+    
+    if ($produto) {
+        echo json_encode([$produto]);  // Retornando como um array
+    } else {
+        echo json_encode([]);  // Retorna um array vazio se não encontrar o produto
+    }
 }
 
 function getProdutoByNome($pdo, $nome) {
@@ -112,5 +111,29 @@ function getProdutoByNome($pdo, $nome) {
     $stmt->execute(["%" . $nome . "%"]);
     $produtos = $stmt->fetchAll(PDO::FETCH_ASSOC);
     echo json_encode($produtos);
+}
+
+function loginUser($pdo) {
+    $data = json_decode(file_get_contents("php://input"), true);
+
+    if (!isset($data['email']) || !isset($data['senha'])) {
+        echo json_encode(["error" => "E-mail e senha são obrigatórios"]);
+        return;
+    }
+
+    try {
+        $stmt = $pdo->prepare("SELECT * FROM usuarios WHERE email = ?");
+        $stmt->execute([$data['email']]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($user && password_verify($data['senha'], $user['senha'])) {
+            $token = bin2hex(random_bytes(32)); // Gerando um token de sessão simples
+            echo json_encode(["message" => "Login bem-sucedido!", "token" => $token]);
+        } else {
+            echo json_encode(["error" => "Credenciais inválidas"]);
+        }
+    } catch (PDOException $e) {
+        echo json_encode(["error" => "Erro ao realizar login: " . $e->getMessage()]);
+    }
 }
 ?>
