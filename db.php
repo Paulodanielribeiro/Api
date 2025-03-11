@@ -9,7 +9,7 @@ try {
     // Criação da conexão com o banco de dados
     $pdo = new PDO("mysql:host=$host;port=$port;dbname=$dbname", $username, $password);
     // Configuração para exibir erros de conexão
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_SILENT);
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     // Caso a conexão seja bem-sucedida, você pode usar este código para teste
     // echo "Conexão bem-sucedida!";
 } catch (PDOException $e) {

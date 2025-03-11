@@ -46,19 +46,20 @@ function getProdutos($pdo) {
 function addProduto($pdo) {
     $data = json_decode(file_get_contents("php://input"), true);
 
-    if (!isset($data['name']) || !isset($data['quantity']) || !isset($data['price']) || !isset($data['descricao'])) {
+    if (!isset($data['nome']) || !isset($data['quantidade']) || !isset($data['preco']) || !isset($data['descricao'])) {
         echo json_encode(["error" => "Todos os campos são obrigatórios"]);
         return;
     }
 
     try {
         $stmt = $pdo->prepare("INSERT INTO produtos (nome, quantidade, preco, descricao) VALUES (?, ?, ?, ?)");
-        $stmt->execute([$data['name'], $data['quantity'], $data['price'], $data['descricao']]);
+        $stmt->execute([$data['nome'], $data['quantidade'], $data['preco'], $data['descricao']]);
         echo json_encode(["message" => "Produto adicionado com sucesso!", "id" => $pdo->lastInsertId()]);
     } catch (PDOException $e) {
         echo json_encode(["error" => "Erro ao adicionar produto: " . $e->getMessage()]);
     }
 }
+
 
 function updateQuantidade($pdo) {
     $data = json_decode(file_get_contents("php://input"), true);
@@ -98,13 +99,9 @@ function getProdutoById($pdo, $id) {
     $stmt = $pdo->prepare("SELECT * FROM produtos WHERE id = ?");
     $stmt->execute([$id]);
     $produto = $stmt->fetch(PDO::FETCH_ASSOC);
-    
-    if ($produto) {
-        echo json_encode([$produto]);  // Retornando como um array
-    } else {
-        echo json_encode([]);  // Retorna um array vazio se não encontrar o produto
-    }
+    echo json_encode($produto ?: ["error" => "Produto não encontrado"]);
 }
+
 
 function getProdutoByNome($pdo, $nome) {
     $stmt = $pdo->prepare("SELECT * FROM produtos WHERE nome LIKE ?");
