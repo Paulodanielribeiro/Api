@@ -1,5 +1,6 @@
 <?php
 header("Access-Control-Allow-Origin: *");
+header("Content-Type: application/json");
 header("Access-Control-Allow-Methods: POST, GET, PUT, DELETE, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type");
 
@@ -46,6 +47,8 @@ function getProdutos($pdo) {
 function addProduto($pdo) {
     $data = json_decode(file_get_contents("php://input"), true);
 
+    error_log(json_encode($data)); // Depuração: Verifique os dados no log do servidor
+
     if (!isset($data['nome']) || !isset($data['quantidade']) || !isset($data['preco']) || !isset($data['descricao'])) {
         echo json_encode(["error" => "Todos os campos são obrigatórios"]);
         return;
@@ -59,6 +62,7 @@ function addProduto($pdo) {
         echo json_encode(["error" => "Erro ao adicionar produto: " . $e->getMessage()]);
     }
 }
+
 
 
 function updateQuantidade($pdo) {
