@@ -19,24 +19,40 @@ switch ($request_method) {
             getProdutos($pdo);
         }
         break;
+    
     case 'POST':
-        if (isset($_GET['action']) && $_GET['action'] === 'login') {
-            loginUser($pdo);
+        if (isset($_GET['action'])) {
+            switch ($_GET['action']) {
+                case 'login':
+                    loginUser($pdo);
+                    break;
+                case 'entrada':
+                    entradaProduto($pdo);
+                    break;
+                case 'saida':
+                    saidaProduto($pdo);
+                    break;
+                default:
+                    echo json_encode(["error" => "Ação inválida"]);
+            }
         } else {
             addProduto($pdo);
         }
         break;
-    case 'PUT':
-        updateQuantidade($pdo);
-        break;
+    
+        case 'PUT':
+            updateProduto($pdo);
+            break;
+        
+    
     case 'DELETE':
         deleteProduto($pdo);
         break;
+    
     default:
         echo json_encode(["message" => "Método não permitido"]);
         break;
 }
-
 // Funções para manipular o banco de dados (adicionar, atualizar, excluir, etc.)
 function getProdutos($pdo) {
     $stmt = $pdo->query("SELECT * FROM produtos");
@@ -65,22 +81,23 @@ function addProduto($pdo) {
 
 
 
-function updateQuantidade($pdo) {
+function updateProduto($pdo) {
     $data = json_decode(file_get_contents("php://input"), true);
 
-    if (!isset($data['id']) || !isset($data['quantity'])) {
-        echo json_encode(["error" => "ID e quantidade são obrigatórios"]);
+    if (!isset($data['id']) || !isset($data['nome']) || !isset($data['preco']) || !isset($data['descricao'])) {
+        echo json_encode(["error" => "ID, nome, preço e descrição são obrigatórios"]);
         return;
     }
 
     try {
-        $stmt = $pdo->prepare("UPDATE produtos SET quantidade = ? WHERE id = ?");
-        $stmt->execute([$data['quantity'], $data['id']]);
-        echo json_encode(["message" => "Quantidade atualizada com sucesso!"]);
+        $stmt = $pdo->prepare("UPDATE produtos SET nome = ?, preco = ?, descricao = ? WHERE id = ?");
+        $stmt->execute([$data['nome'], $data['preco'], $data['descricao'], $data['id']]);
+        echo json_encode(["message" => "Produto atualizado com sucesso!"]);
     } catch (PDOException $e) {
-        echo json_encode(["error" => "Erro ao atualizar quantidade: " . $e->getMessage()]);
+        echo json_encode(["error" => "Erro ao atualizar produto: " . $e->getMessage()]);
     }
 }
+
 
 function deleteProduto($pdo) {
     $data = json_decode(file_get_contents("php://input"), true);
@@ -137,4 +154,63 @@ function loginUser($pdo) {
         echo json_encode(["error" => "Erro ao realizar login: " . $e->getMessage()]);
     }
 }
+function registrarMovimentacao($pdo, $produto_id, $tipo, $quantidade) {
+    try {
+        $stmt = $pdo->prepare("INSERT INTO movimentacoes_estoque (produto_id, tipo, quantidade) VALUES (?, ?, ?)");
+        $stmt->execute([$produto_id, $tipo, $quantidade]);
+    } catch (PDOException $e) {
+        
+        error_log("Erro ao registrar movimentação: " . $e->getMessage()); // Apenas log
+    }
+}
+
+
+function entradaProduto($pdo) {
+    $data = json_decode(file_get_contents("php://input"), true);
+
+    if (!isset($data['id']) || !isset($data['quantidade'])) {
+        echo json_encode(["error" => "ID do produto e quantidade são obrigatórios"]);
+        return;
+    }
+
+    try {
+        $stmt = $pdo->prepare("UPDATE produtos SET quantidade = quantidade + ? WHERE id = ?");
+        $stmt->execute([$data['quantidade'], $data['id']]);
+
+        registrarMovimentacao($pdo, $data['id'], 'entrada', $data['quantidade']);
+    } catch (PDOException $e) {
+        echo json_encode(["error" => "Erro ao adicionar entrada: " . $e->getMessage()]);
+    }
+}
+
+function saidaProduto($pdo) {
+    $data = json_decode(file_get_contents("php://input"), true);
+
+    if (!isset($data['id']) || !isset($data['quantidade'])) {
+        echo json_encode(["error" => "ID do produto e quantidade são obrigatórios"]);
+        return;
+    }
+
+    try {
+        $stmt = $pdo->prepare("SELECT quantidade FROM produtos WHERE id = ?");
+        $stmt->execute([$data['id']]);
+        $produto = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$produto || $produto['quantidade'] < $data['quantidade']) {
+            echo json_encode(["error" => "Estoque insuficiente"]);
+            return; // <-- Impede que a atualização continue
+        }
+
+        $stmt = $pdo->prepare("UPDATE produtos SET quantidade = quantidade - ? WHERE id = ?");
+        $stmt->execute([$data['quantidade'], $data['id']]);
+
+        registrarMovimentacao($pdo, $data['id'], 'saida', $data['quantidade']);
+
+        echo json_encode(["message" => "Saída registrada com sucesso!"]);
+    } catch (PDOException $e) {
+        echo json_encode(["error" => "Erro ao registrar saída: " . $e->getMessage()]);
+    }
+}
+
+
 ?>
