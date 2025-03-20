@@ -20,25 +20,22 @@ switch ($request_method) {
         }
         break;
     
-    case 'POST':
-        if (isset($_GET['action'])) {
-            switch ($_GET['action']) {
-                case 'login':
-                    loginUser($pdo);
-                    break;
-                case 'entrada':
-                    entradaProduto($pdo);
-                    break;
-                case 'saida':
-                    saidaProduto($pdo);
-                    break;
-                default:
-                    echo json_encode(["error" => "Ação inválida"]);
+        case 'PUT':
+            if (isset($_GET['action'])) {
+                switch ($_GET['action']) {
+                    case 'stock_entry':
+                        entradaProduto($pdo); // Registrar entrada
+                        break;
+                    case 'stock_exit':
+                        saidaProduto($pdo); // Registrar saída
+                        break;
+                    default:
+                        echo json_encode(["error" => "Ação inválida"]);
+                }
+            } else {
+                updateProduto($pdo); // Atualizar produto
             }
-        } else {
-            addProduto($pdo);
-        }
-        break;
+            break;
     
         case 'PUT':
             updateProduto($pdo);
