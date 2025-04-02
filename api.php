@@ -15,7 +15,8 @@ function logMessage($message) {
 // Função para entrada de estoque
 function entradaEstoque($data) {
     global $pdo;
-    if (!isset($data['id'], $data['quantidade']) || !is_numeric($data['id']) || $data['quantidade'] <= 0) {
+    
+    if (!isset($data['id'], $data['quantidade']) || !is_numeric($data['id']) || !is_numeric($data['quantidade']) || $data['quantidade'] <= 0) {
         echo json_encode(["error" => "ID e quantidade válidos são obrigatórios"]);
         return;
     }
@@ -31,17 +32,26 @@ function entradaEstoque($data) {
 }
 
 // Função para saída de estoque
+// Função para saída de estoque corrigida
 function saidaEstoque($data) {
     global $pdo;
-    if (!isset($data['id'], $data['quantidade']) || !is_numeric($data['id']) || $data['quantidade'] <= 0) {
-        echo json_encode(["error" => "ID e quantidade válidos são obrigatórios"]);
+
+    if (!isset($data['id'], $data['quantidade'])) {
+        logMessage("Erro: Dados ausentes na requisição. Recebido: " . json_encode($data));
+        echo json_encode(["error" => "ID e quantidade são obrigatórios"]);
+        return;
+    }
+
+    if (!is_numeric($data['id']) || !is_numeric($data['quantidade']) || $data['quantidade'] <= 0) {
+        echo json_encode(["error" => "ID e quantidade devem ser válidos"]);
         return;
     }
 
     try {
         $pdo->beginTransaction();
 
-        $stmt = $pdo->prepare("SELECT quantidade FROM produtos WHERE id = ? FOR UPDATE");
+        // Verifica se o produto existe e pega a quantidade atual
+        $stmt = $pdo->prepare("SELECT quantidade FROM produtos WHERE id = ?");
         $stmt->execute([$data['id']]);
         $produto = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -57,6 +67,7 @@ function saidaEstoque($data) {
             return;
         }
 
+        // Atualiza a quantidade do produto
         $stmt = $pdo->prepare("UPDATE produtos SET quantidade = quantidade - ? WHERE id = ?");
         $stmt->execute([$data['quantidade'], $data['id']]);
 
@@ -72,8 +83,8 @@ function saidaEstoque($data) {
 // Função para atualizar produto
 function updateProduct($id, $data) {
     global $pdo;
-    if (!is_numeric($id)) {
-        echo json_encode(["error" => "ID inválido"]);
+    if (!is_numeric($id) || empty($data)) {
+        echo json_encode(["error" => "ID e dados são obrigatórios"]);
         return;
     }
     
@@ -87,7 +98,7 @@ function updateProduct($id, $data) {
     }
 }
 
-// Função para editar produto (patch)
+// Função para editar produto (PATCH)
 function editProduct($id, $data) {
     global $pdo;
     if (!is_numeric($id)) {
@@ -129,9 +140,39 @@ function editProduct($id, $data) {
     }
 }
 
+// Função para excluir produto
+function deleteProduct($id) {
+    global $pdo;
+    
+    if (!is_numeric($id)) {
+        echo json_encode(["error" => "ID do produto inválido"]);
+        return;
+    }
 
+    try {
+        $stmt = $pdo->prepare("DELETE FROM produtos WHERE id = ?");
+        $stmt->execute([$id]);
+
+        if ($stmt->rowCount() > 0) {
+            echo json_encode(["success" => "Produto excluído com sucesso"]);
+        } else {
+            echo json_encode(["error" => "Produto não encontrado"]);
+        }
+    } catch (Exception $e) {
+        logMessage("Erro ao excluir produto: " . $e->getMessage());
+        echo json_encode(["error" => "Erro ao excluir produto"]);
+    }
+}
+
+// Tratamento das requisições
 $method = $_SERVER['REQUEST_METHOD'];
 $requestData = json_decode(file_get_contents("php://input"), true);
+
+if (json_last_error() !== JSON_ERROR_NONE) {
+    echo json_encode(["error" => "Erro no formato JSON recebido"]);
+    exit;
+}
+
 $action = $_GET['action'] ?? null;
 $id = $_GET['id'] ?? null;
 
@@ -157,6 +198,13 @@ switch ($method) {
             editProduct($id, $requestData);
         } else {
             echo json_encode(["error" => "ID e ação são obrigatórios"]);
+        }
+        break;
+    case 'DELETE':
+        if ($id) {
+            deleteProduct($id);
+        } else {
+            echo json_encode(["error" => "ID obrigatório para exclusão"]);
         }
         break;
     default:
