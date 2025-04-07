@@ -5,6 +5,7 @@ $dbname = "estoque"; // Nome do banco de dados
 $username = "root"; // Usuário do MySQL
 $password = ""; // Senha do MySQL
 
+
 try {
     // Criação da conexão com o banco de dados
     $pdo = new PDO("mysql:host=$host;port=$port;dbname=$dbname", $username, $password);
